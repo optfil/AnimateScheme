@@ -59,28 +59,22 @@ def create_frame_stage_1(step, max_steps):
 
     draw_resistor(draw, 0, 0)
     draw_resistor(draw, -900, 0)
-    draw_resistor(draw, 900, 0)
+    draw_resistor(draw, +900, 0)
 
-    draw_wire(draw, [250, 0, 650, 0])
+    draw_wire(draw, [+250, 0, +650, 0])
     draw_wire(draw, [-250, 0, -650, 0])
-    draw_wire(draw, [-450, 0, -450, 900, 1350, 900, 1350, 0, 1150, 0])
-    draw_wire(draw, [450, 0, 450, -900, -1350, -900, -1350, 0, -1150, 0])
+    draw_wire(draw, [-450, 0, -450, +900, +1350, +900, +1350, 0, +1150, 0])
+    draw_wire(draw, [+450, 0, +450, -900, -1350, -900, -1350, 0, -1150, 0])
 
     turn_step = int(max_steps * 6.0 / 17.0)
     if step <= turn_step:
-        x1 = 1550
-        y1 = 1100 * step / turn_step
-        x2 = 1350
-        y2 = 900 * step / turn_step
-        draw_wire(draw, [x1, y1, x2, y2])
-        draw_wire(draw, [-x1, -y1, -x2, -y2])
+        draw_wire(draw, [+1550, +1100 * step / turn_step, +1350, +900 * step / turn_step])
+        draw_wire(draw, [-1550, -1100 * step / turn_step, -1350, -900 * step / turn_step])
     else:
-        x1 = 1550 - 1100 * (step-turn_step) / (max_steps - 1 - turn_step)
-        y1 = 1150
-        x2 = 1350 - 900 * (step-turn_step) / (max_steps - 1 - turn_step)
-        y2 = 900
-        draw_wire(draw, [x1, y1, x2, y2])
-        draw_wire(draw, [-x1, -y1, -x2, -y2])
+        draw_wire(draw, [+1550 - 1100 * (step-turn_step) / (max_steps - 1 - turn_step), +1150,
+                         +1350 - 900 * (step-turn_step) / (max_steps - 1 - turn_step), -900])
+        draw_wire(draw, [-1550 + 1100 * (step-turn_step) / (max_steps - 1 - turn_step), -1150,
+                         -1350 + 900 * (step-turn_step) / (max_steps - 1 - turn_step), -900])
 
     return img
 
