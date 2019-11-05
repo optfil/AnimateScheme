@@ -85,11 +85,11 @@ def create_frame_stage_2(step, max_steps):
 
     draw_resistor(draw, 0, 0)
 
-    draw_wire(draw, [250, 0, 450, 0])
+    draw_wire(draw, [+250, 0, +450, 0])
     draw_wire(draw, [-250, 0, -450, 0])
-    draw_wire(draw, [-450, 0, -450, 900, 450, 900])
-    draw_wire(draw, [450, 0, 450, -900, -450, -900])
-    draw_wire(draw, [450, 1150, 450, 900])
+    draw_wire(draw, [-450, 0, -450, +900, +450, +900])
+    draw_wire(draw, [+450, 0, +450, -900, -450, -900])
+    draw_wire(draw, [+450, +1150, +450, +900])
     draw_wire(draw, [-450, -1150, -450, -900])
 
     turn_step = int(max_steps * 2.0 / 3.0)
