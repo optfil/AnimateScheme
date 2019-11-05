@@ -89,8 +89,8 @@ def create_frame_stage_2(step, max_steps):
     draw_wire(draw, [-250, 0, -450, 0])
     draw_wire(draw, [-450, 0, -450, +900, +450, +900])
     draw_wire(draw, [+450, 0, +450, -900, -450, -900])
-    draw_wire(draw, [+450, +1150, +450, +900])
-    draw_wire(draw, [-450, -1150, -450, -900])
+    draw_wire(draw, [0, +1150, 0, +900])
+    draw_wire(draw, [0, -1150, 0, -900])
 
     turn_step = int(max_steps * 2.0 / 3.0)
     if step <= turn_step:
@@ -133,8 +133,8 @@ def create_frame_stage_3(step, max_steps):
 
     draw_wire(draw, [+250, 0, +900, 0, +900, +200])
     draw_wire(draw, [-250, 0, -900, 0, -900, -200])
-    draw_wire(draw, [450, 1150, 450, 900])
-    draw_wire(draw, [-450, -1150, -450, -900])
+    draw_wire(draw, [0, +1150, 0, +900])
+    draw_wire(draw, [0, -1150, 0, -900])
     draw_wire(draw, [+450, +900, +900, +900, +900, +700])
     draw_wire(draw, [-450, -900, -900, -900, -900, -700])
 
@@ -151,8 +151,8 @@ def create_frame_stage_4(step, max_steps):
     draw_resistor(draw, +900, +450, angle=math.pi / 2)
     draw_resistor(draw, -900, -450, angle=math.pi / 2)
 
-    draw_wire(draw, [450, 1150, 450, 900])
-    draw_wire(draw, [-450, -1150, -450, -900])
+    draw_wire(draw, [0, +1150, 0, +900])
+    draw_wire(draw, [0, -1150, 0, -900])
     draw_wire(draw, [+450, +900, +900, +900, +900, +700])
     draw_wire(draw, [-450, -900, -900, -900, -900, -700])
     draw_wire(draw, [-900, -200, -900, 0, -900, +900, +450, +900])
@@ -179,17 +179,17 @@ def create_frame_stage_4(step, max_steps):
 
 if __name__ == '__main__':
     frames = []
-    for n_frame in range(100):
-        frames.append(create_frame_stage_1(n_frame, 100))
+    for n_frame in range(40):
+        frames.append(create_frame_stage_1(n_frame, 40))
 
-    # for n_frame in range(20):
-    #     frames.append(create_frame_stage_2(n_frame, 20))
+    for n_frame in range(40):
+        frames.append(create_frame_stage_2(n_frame, 40))
 
-    # for n_frame in range(20):
-    #     frames.append(create_frame_stage_3(n_frame, 20))
+    for n_frame in range(20):
+        frames.append(create_frame_stage_3(n_frame, 20))
 
-    # for n_frame in range(20):
-    #     frames.append(create_frame_stage_4(n_frame, 20))
+    for n_frame in range(40):
+        frames.append(create_frame_stage_4(n_frame, 40))
 
     # frames = [frame.resize((image_width, image_height), resample=Image.LANCZOS) for frame in frames]
     frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True,
