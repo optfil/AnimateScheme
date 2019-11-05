@@ -30,17 +30,19 @@ def unite_bounding_boxes(boxes: List[BoundBox]) -> BoundBox:
     return box
 
 
-@dataclass
+@dataclass(frozen=True)
 class AxisTransform:
     scale: float = 1.0
     x_shift: float = 0.0
     y_shift: float = 0.0
+    x_reversed: bool = False
+    y_reversed: bool = True
 
     def x(self, x_old: RealCoord) -> RealCoord:
-        return x_old * self.scale + self.x_shift
+        return x_old * self.scale * self.x_reversed + self.x_shift
 
     def y(self, y_old: RealCoord) -> RealCoord:
-        return y_old * self.scale + self.y_shift
+        return y_old * self.scale * self.y_reversed + self.y_shift
 
     def xy(self, x_old: RealCoord, y_old: RealCoord) -> Tuple[RealCoord, RealCoord]:
         return self.x(x_old), self.y(y_old)
@@ -49,7 +51,7 @@ class AxisTransform:
     def build(cls, bbox: BoundBox, image_size: Tuple[int, int]) -> AxisTransform:
         scale: float = min(image_size[0] / (bbox[1][0] - bbox[0][0]), image_size[1] / (bbox[1][1] - bbox[0][1]))
         x_shift: float = 0.5 * (image_size[0] - scale * (bbox[1][0] + bbox[0][0]))
-        y_shift: float = 0.5 * (image_size[1] - scale * (bbox[1][1] + bbox[0][1]))
+        y_shift: float = 0.5 * (image_size[1] + scale * (bbox[1][1] + bbox[0][1]))
         return AxisTransform(scale, x_shift, y_shift)
 
 
@@ -118,7 +120,7 @@ class Circuit:
     def add(self, element: CircuitElement) -> None:
         self.elements.append(element)
 
-    def savePng(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str]) -> None:
+    def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str]) -> None:
         if not self.elements:
             return
 

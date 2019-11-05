@@ -249,4 +249,4 @@ if __name__ == '__main__':
     circuit.add(Contact(0, 1000))
     circuit.add(Grounding(1000, 0))
 
-    circuit.savePng([1075, 1085], 'circuit.png')
+    circuit.save_png([1075, 1085], 'circuit.png')
