@@ -250,4 +250,4 @@ if __name__ == '__main__':
     circuit.add(Grounding(1000, 0))
 
     print(circuit)
-    circuit.draw([200, 200])
+    circuit.draw([1075, 1085])
