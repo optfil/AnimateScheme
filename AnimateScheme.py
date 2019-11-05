@@ -1,27 +1,32 @@
 from PIL import Image, ImageDraw
 
 
-image_width = 330
-image_height = 140
-resistor_length = 50
-resistor_width = 20
-resistor_outline_width = 3
-wire_outline_width = 1
+image_resize_factor = 1
+image_width = 3300
+image_height = 1400
+resistor_length = 500
+resistor_width = 200
+resistor_outline_width = 10
+wire_outline_width = 6
 
 
 def c_x(x):
-    return x + image_width/2
+    return image_resize_factor * (x + image_width/2)
 
 
 def c_y(y):
-    return y + image_height/2
+    return image_resize_factor * (y + image_height/2)
+
+
+def create_empty_frame():
+    return Image.new('RGB', (image_width * image_resize_factor, image_height * image_resize_factor), (255, 255, 255))
 
 
 def draw_resistor(draw, x_center, y_center):
     draw.rectangle(
         [c_x(x_center - resistor_length / 2), c_y(y_center - resistor_width / 2),
          c_x(x_center + resistor_length / 2), c_y(y_center + resistor_width / 2)],
-        outline=(0, 0, 0), width=resistor_outline_width)
+        outline=(0, 0, 0), width=resistor_outline_width * image_resize_factor)
 
 
 def draw_wire(draw, xy):
@@ -33,38 +38,38 @@ def draw_wire(draw, xy):
         xy_new = [(xy[i], xy[i+1]) for i in range(0, len(xy), 2)]
     xy_new = [(c_x(elem[0]), c_y(elem[1])) for elem in xy_new]
 
-    draw.line(xy_new, wire_outline_width)
+    draw.line(xy_new, width=wire_outline_width * image_resize_factor, fill=(0, 0, 0), joint='curve')
 
 
-def create_frame_stage_1(step, maxsteps):
-    img = Image.new('RGB', (image_width, image_height), (255, 255, 255))
+def create_frame_stage_1(step, max_steps):
+    img = create_empty_frame()
     draw = ImageDraw.Draw(img)
 
     draw_resistor(draw, 0, 0)
-    draw_resistor(draw, -90, 0)
-    draw_resistor(draw, 90, 0)
+    draw_resistor(draw, -900, 0)
+    draw_resistor(draw, 900, 0)
 
-    draw_wire(draw, [25, 0, 65, 0])
-    draw_wire(draw, [-25, 0, -65, 0])
-    draw_wire(draw, [115, 0, 135, 0])
-    draw_wire(draw, [-115, 0, -135, 0])
-    draw_wire(draw, [-45, 0, -45, 40, 135, 40, 135, 0])
-    draw_wire(draw, [45, 0, 45, -40, -135, -40, -135, 0])
+    draw_wire(draw, [250, 0, 650, 0])
+    draw_wire(draw, [-250, 0, -650, 0])
+    draw_wire(draw, [1150, 0, 1350, 0])
+    draw_wire(draw, [-1150, 0, -1350, 0])
+    draw_wire(draw, [-450, 0, -450, 400, 1350, 400, 1350, 0])
+    draw_wire(draw, [450, 0, 450, -400, -1350, -400, -1350, 0])
 
-    turn_step = int(maxsteps * 6.0 / 17.0)
+    turn_step = int(max_steps * 6.0 / 17.0)
 
     if step <= turn_step:
-        x1 = 155
-        y1 = 60.0 * step / turn_step
-        x2 = 135
-        y2 = 40.0 * step / turn_step
+        x1 = 1550
+        y1 = 600.0 * step / turn_step
+        x2 = 1350
+        y2 = 400.0 * step / turn_step
         draw_wire(draw, [x1, y1, x2, y2])
         draw_wire(draw, [-x1, -y1, -x2, -y2])
     else:
-        x1 = 155 - 110 * (step-turn_step) / (maxsteps-1-turn_step)
-        y1 = 60.0
-        x2 = 135 - 90 * (step-turn_step) / (maxsteps-1-turn_step)
-        y2 = 40.0
+        x1 = 1550 - 1100 * (step-turn_step) / (max_steps - 1 - turn_step)
+        y1 = 600.0
+        x2 = 1350 - 900 * (step-turn_step) / (max_steps - 1 - turn_step)
+        y2 = 400.0
         draw_wire(draw, [x1, y1, x2, y2])
         draw_wire(draw, [-x1, -y1, -x2, -y2])
 
@@ -76,5 +81,6 @@ if __name__ == '__main__':
     for n_frame in range(100):
         frames.append(create_frame_stage_1(n_frame, 100))
 
+    frames = [frame.resize((image_width, image_height), resample=Image.LANCZOS) for frame in frames]
     frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True,
                    duration=20, loop=1)
