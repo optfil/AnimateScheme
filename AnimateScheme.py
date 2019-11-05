@@ -245,8 +245,9 @@ def demo():
 
 
 if __name__ == '__main__':
-    circuit: List[CircuitElement] = list()
-    circuit.append(Contact(0, 100))
-    circuit.append(Grounding(100, 0))
+    circuit: Circuit = Circuit()
+    circuit.add(Contact(0, 1000))
+    circuit.add(Grounding(1000, 0))
 
     print(circuit)
+    circuit.draw([200, 200])
