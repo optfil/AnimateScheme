@@ -1,5 +1,7 @@
 from PIL import Image, ImageDraw
 import math
+from circuit_scheme import *
+from typing import List
 
 
 image_resize_factor = 1
@@ -243,4 +245,8 @@ def demo():
 
 
 if __name__ == '__main__':
-    demo()
+    circuit: List[CircuitElement] = list()
+    circuit.append(Contact(0, 100))
+    circuit.append(Grounding(100, 0))
+
+    print(circuit)
