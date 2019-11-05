@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, List
+from typing import Tuple, List, Union, BinaryIO
 from dataclasses import dataclass, field
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
@@ -8,10 +8,11 @@ from abc import ABC, abstractmethod
 
 RealCoord = float
 BoundBox = Tuple[Tuple[RealCoord, RealCoord], Tuple[RealCoord, RealCoord]]
+Color = Tuple[int, int, int]
 
 
-line_color: Tuple[int, ...] = (0, 0, 0)  # black
-background_color: Tuple[int, ...] = (255, 255, 255)  # white
+line_color: Color = (0, 0, 0)  # black
+background_color: Color = (255, 255, 255)  # white
 contact_width: int = 10
 contact_size: int = 50
 grounding_width: int = 100
@@ -117,7 +118,7 @@ class Circuit:
     def add(self, element: CircuitElement) -> None:
         self.elements.append(element)
 
-    def draw(self, image_size: Tuple[int, int]) -> None:
+    def savePng(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str]) -> None:
         if not self.elements:
             return
 
@@ -131,4 +132,6 @@ class Circuit:
         image_draw: ImageDraw = ImageDraw.Draw(image)
         for element in self.elements:
             element.draw(image_draw, tr)
-        image.save('circuit.png')
+
+        file: BinaryIO = open(pf, 'wb') if isinstance(pf, str) else pf
+        image.save(pf, format='PNG')

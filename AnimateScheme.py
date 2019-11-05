@@ -249,5 +249,4 @@ if __name__ == '__main__':
     circuit.add(Contact(0, 1000))
     circuit.add(Grounding(1000, 0))
 
-    print(circuit)
-    circuit.draw([1075, 1085])
+    circuit.savePng([1075, 1085], 'circuit.png')
