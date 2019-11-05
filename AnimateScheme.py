@@ -45,8 +45,11 @@ def create_frame_stage_1(step, maxsteps):
     draw_resistor(draw, 90, 0)
 
     draw_wire(draw, [25, 0, 65, 0])
-    draw_wire(draw, [(-25, 0,), (-65, 0)])
-    draw_wire(draw, [])
+    draw_wire(draw, [-25, 0, -65, 0])
+    draw_wire(draw, [115, 0, 155, 0])
+    draw_wire(draw, [-115, 0, -155, 0])
+    draw_wire(draw, [-45, 0, -45, 40, 135, 40, 135, 0])
+    draw_wire(draw, [45, 0, 45, -40, -135, -40, -135, 0])
 
     return img
 
