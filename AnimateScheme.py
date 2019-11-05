@@ -2,14 +2,14 @@ from PIL import Image, ImageDraw
 import math
 
 
-image_resize_factor = 0.1
+image_resize_factor = 1
 image_width = 3300
 image_height = 2400
 resistor_length = 500
 resistor_width = 200
 contact_size = 50
-resistor_outline_width = 6  # 10 * image_resize_factor
-wire_outline_width = 1  # 6 * image_resize_factor
+resistor_outline_width = 10 * image_resize_factor
+wire_outline_width = 6 * image_resize_factor
 
 
 def c_x(x):
@@ -21,7 +21,8 @@ def c_y(y):
 
 
 def create_empty_frame():
-    return Image.new('RGB', (int(image_width * image_resize_factor), int(image_height * image_resize_factor)), (255, 255, 255))
+    return Image.new('RGB', (int(image_width * image_resize_factor), int(image_height * image_resize_factor)),
+                     (255, 255, 255))
 
 
 def draw_resistor(draw, x_center, y_center, color=(0, 0, 0), angle=0.0):
@@ -228,14 +229,14 @@ if __name__ == '__main__':
     frames = []
     for n_frame in range(30):
         frames.append(create_frame_stage_1(n_frame, 30))
-    # for n_frame in range(30):
-    #     frames.append(create_frame_stage_2(n_frame, 30))
-    # for n_frame in range(15):
-    #     frames.append(create_frame_stage_3(n_frame, 15))
-    # for n_frame in range(30):
-    #     frames.append(create_frame_stage_4(n_frame, 30))
-    # for n_frame in range(10):
-    #     frames.append(create_frame_stage_5(n_frame, 10))
+    for n_frame in range(30):
+        frames.append(create_frame_stage_2(n_frame, 30))
+    for n_frame in range(15):
+        frames.append(create_frame_stage_3(n_frame, 15))
+    for n_frame in range(30):
+        frames.append(create_frame_stage_4(n_frame, 30))
+    for n_frame in range(10):
+        frames.append(create_frame_stage_5(n_frame, 10))
 
     # frames = [frame.resize((image_width, image_height), resample=Image.LANCZOS) for frame in frames]
     frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True,
