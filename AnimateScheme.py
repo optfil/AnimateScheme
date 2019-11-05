@@ -66,15 +66,15 @@ def create_frame_stage_1(step, max_steps):
     draw_wire(draw, [-450, 0, -450, +900, +1350, +900, +1350, 0, +1150, 0])
     draw_wire(draw, [+450, 0, +450, -900, -1350, -900, -1350, 0, -1150, 0])
 
-    turn_step = int(max_steps * 6.0 / 17.0)
+    turn_step = int(max_steps * 18.0 / 31.0)
     if step <= turn_step:
         draw_wire(draw, [+1550, +1100 * step / turn_step, +1350, +900 * step / turn_step])
         draw_wire(draw, [-1550, -1100 * step / turn_step, -1350, -900 * step / turn_step])
     else:
-        draw_wire(draw, [+1550 - 1100 * (step-turn_step) / (max_steps - 1 - turn_step), +1150,
-                         +1350 - 900 * (step-turn_step) / (max_steps - 1 - turn_step), -900])
-        draw_wire(draw, [-1550 + 1100 * (step-turn_step) / (max_steps - 1 - turn_step), -1150,
-                         -1350 + 900 * (step-turn_step) / (max_steps - 1 - turn_step), -900])
+        draw_wire(draw, [+1550 - 1550 * (step-turn_step) / (max_steps - 1 - turn_step), +1150,
+                         +1350 - 1350 * (step-turn_step) / (max_steps - 1 - turn_step), +900])
+        draw_wire(draw, [-1550 + 1550 * (step-turn_step) / (max_steps - 1 - turn_step), -1150,
+                         -1350 + 1350 * (step-turn_step) / (max_steps - 1 - turn_step), -900])
 
     return img
 
@@ -148,30 +148,39 @@ def create_frame_stage_4(step, max_steps):
     img = create_empty_frame()
     draw = ImageDraw.Draw(img)
 
-    # draw_resistor(draw, 0, 0)
     draw_resistor(draw, +900, +450, angle=math.pi / 2)
     draw_resistor(draw, -900, -450, angle=math.pi / 2)
 
-    draw_wire(draw, [+250, 0, +900, 0, +900, +200])
-    draw_wire(draw, [-250, 0, -900, 0, -900, -200])
     draw_wire(draw, [450, 1150, 450, 900])
     draw_wire(draw, [-450, -1150, -450, -900])
     draw_wire(draw, [+450, +900, +900, +900, +900, +700])
     draw_wire(draw, [-450, -900, -900, -900, -900, -700])
-    draw_wire(draw, [-900, 0, -900, +900, +450, +900])
-    draw_wire(draw, [+900, 0, +900, -900, -450, -900])
+    draw_wire(draw, [-900, -200, -900, 0, -900, +900, +450, +900])
+    draw_wire(draw, [+900, +200, +900, 0, +900, -900, -450, -900])
 
-    turn_step = int(max_steps * 18. / 35.)
-    if step > turn_step:
-        step = turn_step
+    turn_step = int(max_steps * 0.5)
+    if step <= turn_step:
+        phi = -math.atan2(900 * step / turn_step, 900)
+        draw_resistor(draw, 0, 0, angle=phi)
+        draw_wire(draw, [+resistor_length / 2 * math.cos(phi), +resistor_length / 2 * math.sin(phi),
+                         +900, +900 * math.tan(phi)])
+        draw_wire(draw, [-resistor_length / 2 * math.cos(phi), -resistor_length / 2 * math.sin(phi),
+                         -900, -900 * math.tan(phi)])
+    else:
+        phi = math.atan2(max_steps - 1 - step, max_steps - 1 - turn_step)
+        draw_resistor(draw, 0, 0, angle=phi - math.pi / 2)
+        draw_wire(draw, [+resistor_length / 2 * math.sin(phi), -resistor_length / 2 * math.cos(phi),
+                         +900 * math.tan(phi), -900])
+        draw_wire(draw, [-resistor_length / 2 * math.sin(phi), +resistor_length / 2 * math.cos(phi),
+                         -900 * math.tan(phi), +900])
 
     return img
 
 
 if __name__ == '__main__':
     frames = []
-    # for n_frame in range(20):
-    #     frames.append(create_frame_stage_1(n_frame, 20))
+    for n_frame in range(100):
+        frames.append(create_frame_stage_1(n_frame, 100))
 
     # for n_frame in range(20):
     #     frames.append(create_frame_stage_2(n_frame, 20))
@@ -179,8 +188,8 @@ if __name__ == '__main__':
     # for n_frame in range(20):
     #     frames.append(create_frame_stage_3(n_frame, 20))
 
-    for n_frame in range(20):
-        frames.append(create_frame_stage_4(n_frame, 20))
+    # for n_frame in range(20):
+    #     frames.append(create_frame_stage_4(n_frame, 20))
 
     # frames = [frame.resize((image_width, image_height), resample=Image.LANCZOS) for frame in frames]
     frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True,
