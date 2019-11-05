@@ -47,16 +47,34 @@ def create_frame_stage_1(step, maxsteps):
     draw_wire(draw, [25, 0, 65, 0])
     draw_wire(draw, [-25, 0, -65, 0])
     draw_wire(draw, [115, 0, 135, 0])
-    draw_wire(draw, [135, 0, 155, 0])
     draw_wire(draw, [-115, 0, -135, 0])
-    draw_wire(draw, [-135, 0, -155, 0])
     draw_wire(draw, [-45, 0, -45, 40, 135, 40, 135, 0])
     draw_wire(draw, [45, 0, 45, -40, -135, -40, -135, 0])
+
+    turn_step = int(maxsteps * 6.0 / 17.0)
+
+    if step <= turn_step:
+        x1 = 155
+        y1 = 60.0 * step / turn_step
+        x2 = 135
+        y2 = 40.0 * step / turn_step
+        draw_wire(draw, [x1, y1, x2, y2])
+        draw_wire(draw, [-x1, -y1, -x2, -y2])
+    else:
+        x1 = 155 - 110 * (step-turn_step) / (maxsteps-1-turn_step)
+        y1 = 60.0
+        x2 = 135 - 90 * (step-turn_step) / (maxsteps-1-turn_step)
+        y2 = 40.0
+        draw_wire(draw, [x1, y1, x2, y2])
+        draw_wire(draw, [-x1, -y1, -x2, -y2])
 
     return img
 
 
 if __name__ == '__main__':
     frames = []
-    frames.append(create_frame_stage_1(0, 0))
-    frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True, duration=100, loop=1)
+    for n_frame in range(100):
+        frames.append(create_frame_stage_1(n_frame, 100))
+
+    frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True,
+                   duration=20, loop=1)
