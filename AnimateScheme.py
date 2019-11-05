@@ -225,7 +225,7 @@ def create_frame_stage_5(step, max_step):
     return img
 
 
-if __name__ == '__main__':
+def demo():
     frames = []
     for n_frame in range(30):
         frames.append(create_frame_stage_1(n_frame, 30))
@@ -238,6 +238,9 @@ if __name__ == '__main__':
     for n_frame in range(10):
         frames.append(create_frame_stage_5(n_frame, 10))
 
-    # frames = [frame.resize((image_width, image_height), resample=Image.LANCZOS) for frame in frames]
     frames[0].save('scheme_transformation.gif', format='GIF', append_images=frames[1:], save_all=True,
                    duration=20, loop=1)
+
+
+if __name__ == '__main__':
+    demo()
