@@ -60,8 +60,8 @@ def draw_contact(draw, x_center, y_center, color=(0, 0, 0)):
         [c_x(x_center - contact_size / 2), c_y(y_center - contact_size / 2),
          c_x(x_center + contact_size / 2), c_y(y_center + contact_size / 2)],
         fill=(255, 255, 255), outline=color, width=resistor_outline_width)
-    draw.line([c_x(x_center - contact_size), c_y(y_center + contact_size),
-               c_x(x_center + contact_size), c_y(y_center - contact_size)],
+    draw.line([c_x(x_center - contact_size / 2), c_y(y_center + contact_size / 2),
+               c_x(x_center + contact_size / 2), c_y(y_center - contact_size / 2)],
               width=wire_outline_width, fill=color)
 
 
