@@ -16,12 +16,18 @@ def c_y(y):
     return y + image_height/2
 
 
+def draw_resistor(draw, x_center, y_center):
+    draw.rectangle(
+        [c_x(x_center - resistor_length / 2), c_y(y_center - resistor_width / 2),
+         c_x(x_center + resistor_length / 2), c_y(y_center + resistor_width / 2)],
+        outline=(0, 0, 0), width=resistor_outline_width)
+
+
 def create_frame_stage_1(step, maxsteps):
     img = Image.new('RGB', (image_width, image_height), (255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    draw.rectangle([c_x(-resistor_length/2), c_y(-resistor_width/2), c_x(resistor_length/2), c_y(resistor_width/2)],
-                   outline=(0, 0, 0), width=resistor_outline_width)
+    draw_resistor(draw, 0, 0)
 
     return img
 
