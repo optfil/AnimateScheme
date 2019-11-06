@@ -4,6 +4,7 @@ from typing import Tuple, List, Union, BinaryIO
 from dataclasses import dataclass, field
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
+from enum import Enum
 
 
 RealCoord = float
@@ -32,17 +33,21 @@ def unite_bounding_boxes(boxes: List[BoundBox]) -> BoundBox:
 
 @dataclass(frozen=True)
 class AxisTransform:
+    class ReverseState(Enum):
+        STRAIGHT = 1
+        REVERSED = -1
+
     scale: float = 1.0
     x_shift: float = 0.0
     y_shift: float = 0.0
-    x_reversed: bool = False
-    y_reversed: bool = True
+    x_reversed: ReverseState = ReverseState.STRAIGHT
+    y_reversed: ReverseState = ReverseState.REVERSED
 
     def x(self, x_old: RealCoord) -> RealCoord:
-        return x_old * self.scale * self.x_reversed + self.x_shift
+        return x_old * self.scale * self.x_reversed.value + self.x_shift
 
     def y(self, y_old: RealCoord) -> RealCoord:
-        return y_old * self.scale * self.y_reversed + self.y_shift
+        return y_old * self.scale * self.y_reversed.value + self.y_shift
 
     def xy(self, x_old: RealCoord, y_old: RealCoord) -> Tuple[RealCoord, RealCoord]:
         return self.x(x_old), self.y(y_old)
@@ -78,8 +83,8 @@ class Contact(CircuitElement):
         image_draw.ellipse([tr.xy(self.x - contact_size / 2, self.y - contact_size / 2),
                             tr.xy(self.x + contact_size / 2, self.y + contact_size / 2)],
                            outline=line_color, fill=background_color, width=line_width)
-        image_draw.line([tr.xy(self.x - contact_size / 2, self.y + contact_size / 2),
-                         tr.xy(self.x + contact_size / 2, self.y - contact_size / 2)],
+        image_draw.line([tr.xy(self.x - contact_size / 2, self.y - contact_size / 2),
+                         tr.xy(self.x + contact_size / 2, self.y + contact_size / 2)],
                         fill=line_color, width=line_width)
 
     def bounding_box(self) -> BoundBox:
@@ -96,16 +101,17 @@ class Grounding(CircuitElement):
         return self.x, self.y
 
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
-        image_draw.line([tr.xy(self.x, self.y), tr.xy(self.x, self.y + grounding_height / 3)],
+        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.x, self.y)
+        image_draw.line([cc, (cc[0], cc[1] + grounding_height / 3)],
                         fill=line_color, width=line_width)
-        image_draw.line([tr.xy(self.x - grounding_width / 2, self.y + grounding_height / 3),
-                         tr.xy(self.x + grounding_width / 2, self.y + grounding_height / 3)],
+        image_draw.line([(cc[0] - grounding_width / 2, cc[1] + grounding_height / 3),
+                         (cc[0] + grounding_width / 2, cc[1] + grounding_height / 3)],
                         fill=line_color, width=line_width)
-        image_draw.line([tr.xy(self.x - grounding_width / 3, self.y + grounding_height / 3 * 2),
-                         tr.xy(self.x + grounding_width / 3, self.y + grounding_height / 3 * 2)],
+        image_draw.line([(cc[0] - grounding_width / 3, cc[1] + grounding_height / 3 * 2),
+                         (cc[0] + grounding_width / 3, cc[1] + grounding_height / 3 * 2)],
                         fill=line_color, width=line_width)
-        image_draw.line([tr.xy(self.x - grounding_width / 6, self.y + grounding_height),
-                         tr.xy(self.x + grounding_width / 6, self.y + grounding_height)],
+        image_draw.line([(cc[0] - grounding_width / 6, cc[1] + grounding_height),
+                         (cc[0] + grounding_width / 6, cc[1] + grounding_height)],
                         fill=line_color, width=line_width)
 
     def bounding_box(self) -> BoundBox:
@@ -137,3 +143,8 @@ class Circuit:
 
         file: BinaryIO = open(pf, 'wb') if isinstance(pf, str) else pf
         image.save(pf, format='PNG')
+
+        print(tr)
+        print(bbox)
+        print(tr.xy(bbox[0][0], bbox[0][1]))
+        print(tr.xy(bbox[1][0], bbox[1][1]))
