@@ -251,5 +251,6 @@ if __name__ == '__main__':
     circuit.add(Contact(0, 1000))
     circuit.add(Grounding(1000, 0))
     circuit.add(Node(500, 500))
+    circuit.add(Wire([(0, 1000), (0, 1200), (500, 1200), (500, 500), (1200, 500), (1200, 0), (1000, 0)]))
 
     circuit.save_png((1000, 1000), 'circuit.png')
