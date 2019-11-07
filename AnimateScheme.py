@@ -2,6 +2,8 @@ from PIL import Image, ImageDraw
 import math
 from circuit_scheme import *
 from typing import List
+import random
+import time
 
 
 image_resize_factor = 1
@@ -245,12 +247,16 @@ def demo():
 
 
 if __name__ == '__main__':
+    random.seed(time.time())
+
     circuit: Circuit = Circuit()
-    circuit.add(Contact(0, 1000))
-    circuit.add(Grounding(10, 0))
+    for _ in range(20):
+        circuit.add(Contact(random.uniform(0, 1000), random.uniform(0, 1000)))
+    for _ in range(20):
+        circuit.add(Grounding(random.uniform(0, 1000), random.uniform(0, 1000)))
 
-    # circuit.save_png([1075, 1085], 'circuit.png')
+    circuit.save_png([1000, 1000], 'circuit.png')
 
-    for element in circuit.elements:
-        print(element, element.bounding_box())
-    circuit.axis_transformation([100, 100])
+    # for element in circuit.elements:
+    #     print(element, element.bounding_box())
+    # circuit.axis_transformation([100, 100])
