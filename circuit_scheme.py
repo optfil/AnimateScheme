@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import math
 from typing import Tuple, List, Union, BinaryIO
 from dataclasses import dataclass, field
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from optimization import Constraint, solve
+import optimization
 
 RealCoord = float
 BoundBox = Tuple[Tuple[RealCoord, RealCoord], Tuple[RealCoord, RealCoord]]
@@ -62,9 +65,15 @@ class AxisTransform:
 
 @dataclass
 class CircuitElement(ABC):
+    x: RealCoord
+    y: RealCoord
+
     @abstractmethod
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
         pass
+
+    def xy(self) -> Tuple[float, float]:
+        return self.x, self.y
 
     @abstractmethod
     def bounding_box(self) -> BoundBox:
@@ -73,12 +82,6 @@ class CircuitElement(ABC):
 
 @dataclass
 class Contact(CircuitElement):
-    x: RealCoord
-    y: RealCoord
-
-    def xy(self) -> Tuple[RealCoord, RealCoord]:
-        return self.x, self.y
-
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
         image_draw.ellipse([tr.xy(self.x - contact_size / 2, self.y - contact_size / 2),
                             tr.xy(self.x + contact_size / 2, self.y + contact_size / 2)],
@@ -88,18 +91,12 @@ class Contact(CircuitElement):
                         fill=line_color, width=line_width)
 
     def bounding_box(self) -> BoundBox:
-        return (self.x - contact_size / 2, self.y - contact_size / 2), \
-               (self.x + contact_size / 2, self.y + contact_size / 2)
+        return (-contact_size / 2, -contact_size / 2), \
+               (+contact_size / 2, +contact_size / 2)
 
 
 @dataclass
 class Grounding(CircuitElement):
-    x: RealCoord
-    y: RealCoord
-
-    def xy(self) -> Tuple[RealCoord, RealCoord]:
-        return self.x, self.y
-
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
         cc: Tuple[RealCoord, RealCoord] = tr.xy(self.x, self.y)
         image_draw.line([cc, (cc[0], cc[1] + grounding_height / 3)],
@@ -115,8 +112,8 @@ class Grounding(CircuitElement):
                         fill=line_color, width=line_width)
 
     def bounding_box(self) -> BoundBox:
-        return (self.x - grounding_width / 2, self.y), \
-               (self.x + grounding_width / 2, self.y + grounding_height)
+        return (-grounding_width / 2, 0), \
+               (+grounding_width / 2, grounding_height)
 
 
 @dataclass
@@ -125,6 +122,45 @@ class Circuit:
 
     def add(self, element: CircuitElement) -> None:
         self.elements.append(element)
+
+    def axis_transformation(self, image_size: Tuple[int, int],
+                            x_reverse: AxisTransform.ReverseState = AxisTransform.ReverseState.STRAIGHT,
+                            y_reverse: AxisTransform.ReverseState = AxisTransform.ReverseState.REVERSED) \
+            -> AxisTransform:
+        if not self.elements:
+            return AxisTransform(0.0, 0.0, 0.0, x_reverse, y_reverse)
+
+        x_cons: List[Constraint] = list()
+        y_cons: List[Constraint] = list()
+        for element in self.elements:
+            pos: Tuple[float, float] = element.xy()
+            bbox: BoundBox = element.bounding_box()
+            x_cons.append(Constraint.make(x_reverse.value * pos[0], -bbox[0][0], image_size[0] - bbox[1][0]))
+            y_cons.append(Constraint.make(y_reverse.value * pos[1], -bbox[0][1], image_size[1] - bbox[1][1]))
+        print(optimization.all_valid_constraints(x_cons), optimization.has_solutions(x_cons))
+        print(optimization.all_valid_constraints(y_cons), optimization.has_solutions(y_cons))
+        sx: float
+        dx: float
+        sx, dx = solve(x_cons)
+        print(sx, dx)
+        sy: float
+        dy: float
+        sy, dy = solve(y_cons)
+        print(sy, dy)
+
+        if math.isinf(sx) and math.isinf(sy):
+            return AxisTransform(1.0, 0.0, 0.0, x_reverse, y_reverse)
+
+        s: float
+        if sx < sy:
+            s = sx
+            dy = optimization.dx_interval_mid(y_cons, s)
+        else:
+            s = sy
+            dx = optimization.dx_interval_mid(x_cons, s)
+
+        print(s, dx, dy)
+        return AxisTransform(s, dx, dy, x_reverse, y_reverse)
 
     def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str]) -> None:
         if not self.elements:
@@ -142,7 +178,7 @@ class Circuit:
             element.draw(image_draw, tr)
 
         file: BinaryIO = open(pf, 'wb') if isinstance(pf, str) else pf
-        image.save(pf, format='PNG')
+        image.save(file, format='PNG')
 
         print(tr)
         print(bbox)

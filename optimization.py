@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import List, Tuple
 import math
-import sys
 from dataclasses import dataclass
 import random
 import time
@@ -99,9 +98,17 @@ def dx_interval(cons: List[Constraint], s: float) -> Tuple[float, float]:
     return interval
 
 
+def dx_interval_mid(cons: List[Constraint], s: float) -> float:
+    interval = dx_interval(cons, s)
+    return 0.5 * (interval[0] + interval[1])
+
+
 def solve(cons: List[Constraint]) -> Tuple[float, float]:
-    # find index of constraint with top lower branch
-    # it corresponds to the widest circuit element
+    if not cons or not has_solutions(cons):
+        return 0.0, 0.0
+    if has_infinite_solutions(cons):
+        return math.inf, 0.0
+
     constraint_idx, _ = max(enumerate(cons), key=lambda ic: ic[1][1])
 
     continue_flag: bool = True
@@ -121,20 +128,14 @@ def solve(cons: List[Constraint]) -> Tuple[float, float]:
                     s_current_max = s_candidate
                     continue_flag = True
                     constraint_idx_candidate = idx
-                # print('continue: ', idx, ' s_candidate = ', s_candidate, ' , s_current_max = ', s_current_max)
             else:
                 s_candidate = (cons[idx][2] - cons[constraint_idx][1]) / (cons[idx][0] - cons[constraint_idx][0])
                 if s_candidate < s_current_max:
                     s_current_max = s_candidate
                     continue_flag = False
                     constraint_idx_candidate = idx
-                # print('break: ', idx, ' s_candidate = ', s_candidate, ' , s_current_max = ', s_current_max)
-        # print('continue? ', continue_flag,
-        #       ' , s_current_max = ', s_current_max,
-        #       ' , constraint_idx_candidate = ', constraint_idx_candidate)
         constraint_idx = constraint_idx_candidate
         dx = cons[constraint_idx].dx_top_branch(s_current_max)
-        # sys.stdin.read(1)
     return s_current_max, dx
 
 

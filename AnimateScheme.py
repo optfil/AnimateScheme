@@ -247,6 +247,10 @@ def demo():
 if __name__ == '__main__':
     circuit: Circuit = Circuit()
     circuit.add(Contact(0, 1000))
-    circuit.add(Grounding(1000, 0))
+    circuit.add(Grounding(10, 0))
 
-    circuit.save_png([1075, 1085], 'circuit.png')
+    # circuit.save_png([1075, 1085], 'circuit.png')
+
+    for element in circuit.elements:
+        print(element, element.bounding_box())
+    circuit.axis_transformation([100, 100])
