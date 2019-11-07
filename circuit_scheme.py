@@ -5,7 +5,7 @@ from typing import Tuple, List, Union, BinaryIO
 from dataclasses import dataclass, field
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
-from enum import Enum
+import enum
 
 from optimization import Constraint, solve
 import optimization
@@ -18,17 +18,20 @@ Color = Tuple[int, int, int]
 
 line_color: Color = (0, 0, 0)  # black
 background_color: Color = (255, 255, 255)  # white
-contact_radius: float = 50
+contact_diameter: float = 50
 grounding_width: float = 100
 grounding_height: float = 60
 node_radius: float = 16
+resistance_length = 150
+resistance_width = 60
 line_width: int = 8
 wire_width: int = 6
 
 
 @dataclass(frozen=True)
 class AxisTransform:
-    class ReverseState(Enum):
+    @enum.unique
+    class ReverseState(enum.Enum):
         STRAIGHT = 1
         REVERSED = -1
 
@@ -39,10 +42,10 @@ class AxisTransform:
     y_reversed_: ReverseState = ReverseState.REVERSED
 
     def x(self, x_old: RealCoord) -> RealCoord:
-        return x_old * self.scale_ * self.x_reversed_.value + self.x_shift_
+        return x_old * self.scale_ * self.x_reversed().value + self.x_shift_
 
     def y(self, y_old: RealCoord) -> RealCoord:
-        return y_old * self.scale_ * self.y_reversed_.value + self.y_shift_
+        return y_old * self.scale_ * self.y_reversed().value + self.y_shift_
 
     def xy(self, xy: Tuple[RealCoord, RealCoord]) -> Tuple[RealCoord, RealCoord]:
         return self.x(xy[0]), self.y(xy[1])
@@ -52,6 +55,9 @@ class AxisTransform:
 
     def y_reversed(self) -> ReverseState:
         return self.y_reversed_
+
+    def is_right_system(self) -> bool:
+        return self.x_reversed() * self.y_reversed() == 1
 
 
 @dataclass
@@ -75,18 +81,18 @@ class CircuitElement(ABC):
 class Contact(CircuitElement):
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
         cc: Tuple[RealCoord, RealCoord] = tr.xy(self.xy())
-        image_draw.ellipse([(cc[0] - contact_radius / 2, cc[1] - contact_radius / 2),
-                            (cc[0] + contact_radius / 2, cc[1] + contact_radius / 2)],
+        image_draw.ellipse([(cc[0] - contact_diameter / 2, cc[1] - contact_diameter / 2),
+                            (cc[0] + contact_diameter / 2, cc[1] + contact_diameter / 2)],
                            outline=line_color, fill=background_color, width=line_width)
-        image_draw.line([(cc[0] - contact_radius * 0.6, cc[1] + contact_radius * 0.6),
-                         (cc[0] + contact_radius * 0.6, cc[1] - contact_radius * 0.6)],
+        image_draw.line([(cc[0] - contact_diameter * 0.6, cc[1] + contact_diameter * 0.6),
+                         (cc[0] + contact_diameter * 0.6, cc[1] - contact_diameter * 0.6)],
                         fill=line_color, width=line_width)
 
     def bounding_box(self) -> BoundBox:
-        return (-contact_radius * 0.6 - line_width / 2 / math.sqrt(2),
-                -contact_radius * 0.6 - line_width / 2 / math.sqrt(2)), \
-               (+contact_radius * 0.6 + line_width / 2 / math.sqrt(2),
-                +contact_radius * 0.6 + line_width / 2 / math.sqrt(2))
+        return (-contact_diameter * 0.6 - line_width / 2 / math.sqrt(2),
+                -contact_diameter * 0.6 - line_width / 2 / math.sqrt(2)), \
+               (+contact_diameter * 0.6 + line_width / 2 / math.sqrt(2),
+                +contact_diameter * 0.6 + line_width / 2 / math.sqrt(2))
 
 
 @dataclass
