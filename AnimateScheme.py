@@ -247,10 +247,25 @@ def demo():
 
 
 if __name__ == '__main__':
-    circuit: Circuit = Circuit()
-    circuit.add(Contact(0, 1000))
-    circuit.add(Grounding(1000, 0))
-    circuit.add(Node(500, 500))
-    circuit.add(Wire([(0, 1000), (0, 1200), (500, 1200), (500, 500), (1200, 500), (1200, 0), (1000, 0)]))
+    c1: Contact = Contact(0, 1000)
+    c2: Contact = Contact(0, 800)
+    g: Grounding = Grounding(1000, 100)
+    node: Node = Node(500, 500)
+    w1: Wire = Wire([(0, 1000), (0, 1200), (500, 1200), (500, 500)])
+    w2: Wire = Wire([(500, 500), (1200, 500), (1200, 100), (1000, 100)])
+    w3: Wire = Wire([(0, 800), (100, 800), (100, 500), (225, 500)])
+    w4: Wire = Wire([(375, 500), (500, 500)])
+    r1: Resistance = Resistance(300, 500, 0)
 
-    circuit.save_png((1000, 1000), 'circuit.png')
+    circuit: Circuit = Circuit()
+    circuit.add(c1)
+    circuit.add(c2)
+    circuit.add(g)
+    circuit.add(node)
+    circuit.add(w1)
+    circuit.add(w2)
+    circuit.add(w3)
+    circuit.add(w4)
+    circuit.add(r1)
+
+    circuit.save_png((1500, 1500), 'circuit.png')
