@@ -57,7 +57,7 @@ class AxisTransform:
         return self.y_reversed_
 
     def is_right_system(self) -> bool:
-        return self.x_reversed() * self.y_reversed() == 1
+        return self.x_reversed().value * self.y_reversed().value == 1
 
 
 @dataclass
@@ -198,11 +198,12 @@ class Circuit:
         print(s, dx, dy)
         return AxisTransform(s, dx, dy, x_reverse, y_reverse)
 
-    def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str]) -> None:
+    def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str], tr: AxisTransform = None) -> None:
         if not self.elements_:
             return
 
-        tr: AxisTransform = self.axis_transformation(image_size)
+        if not tr:
+            tr = self.axis_transformation(image_size)
         image: Image = Image.new('RGB', image_size, background_color)
         image_draw: ImageDraw = ImageDraw.Draw(image)
         for wire in self.wires_:
