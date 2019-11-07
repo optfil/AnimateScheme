@@ -44,8 +44,8 @@ class AxisTransform:
     def y(self, y_old: RealCoord) -> RealCoord:
         return y_old * self.scale_ * self.y_reversed_.value + self.y_shift_
 
-    def xy(self, x_old: RealCoord, y_old: RealCoord) -> Tuple[RealCoord, RealCoord]:
-        return self.x(x_old), self.y(y_old)
+    def xy(self, xy: Tuple[RealCoord, RealCoord]) -> Tuple[RealCoord, RealCoord]:
+        return self.x(xy[0]), self.y(xy[1])
 
     def x_reversed(self) -> ReverseState:
         return self.x_reversed_
@@ -56,15 +56,15 @@ class AxisTransform:
 
 @dataclass
 class CircuitElement(ABC):
-    x: RealCoord
-    y: RealCoord
+    x_: RealCoord
+    y_: RealCoord
 
     @abstractmethod
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
         pass
 
     def xy(self) -> Tuple[float, float]:
-        return self.x, self.y
+        return self.x_, self.y_
 
     @abstractmethod
     def bounding_box(self) -> BoundBox:
@@ -74,7 +74,7 @@ class CircuitElement(ABC):
 @dataclass
 class Contact(CircuitElement):
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
-        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.x, self.y)
+        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.xy())
         image_draw.ellipse([(cc[0] - contact_radius / 2, cc[1] - contact_radius / 2),
                             (cc[0] + contact_radius / 2, cc[1] + contact_radius / 2)],
                            outline=line_color, fill=background_color, width=line_width)
@@ -92,7 +92,7 @@ class Contact(CircuitElement):
 @dataclass
 class Grounding(CircuitElement):
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
-        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.x, self.y)
+        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.xy())
         image_draw.line([cc, (cc[0], cc[1] + grounding_height / 3)],
                         fill=line_color, width=wire_width)
         image_draw.line([(cc[0] - grounding_width / 2, cc[1] + grounding_height / 3),
@@ -113,7 +113,7 @@ class Grounding(CircuitElement):
 @dataclass
 class Node(CircuitElement):
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
-        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.x, self.y)
+        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.xy())
         image_draw.ellipse([(cc[0] - node_radius / 2, cc[1] - node_radius / 2),
                             (cc[0] + node_radius / 2, cc[1] + node_radius / 2)],
                            outline=line_color, fill=line_color, width=line_width)
@@ -133,7 +133,7 @@ class Wire:
         if len(self.nodes_) < 2:
             return
 
-        nodes_positions: List[Tuple[RealCoord, RealCoord]] = [tr.xy(node[0], node[1]) for node in self.nodes_]
+        nodes_positions: List[Tuple[RealCoord, RealCoord]] = [tr.xy(node) for node in self.nodes_]
         image_draw.line(nodes_positions,
                         fill=line_color, width=wire_width, joint='curve')
 
