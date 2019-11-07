@@ -247,16 +247,9 @@ def demo():
 
 
 if __name__ == '__main__':
-    random.seed(time.time())
-
     circuit: Circuit = Circuit()
-    for _ in range(20):
-        circuit.add(Contact(random.uniform(0, 1000), random.uniform(0, 1000)))
-    for _ in range(20):
-        circuit.add(Grounding(random.uniform(0, 1000), random.uniform(0, 1000)))
+    circuit.add(Contact(0, 1000))
+    circuit.add(Grounding(1000, 0))
+    circuit.add(Node(500, 500))
 
-    circuit.save_png([1000, 1000], 'circuit.png')
-
-    # for element in circuit.elements:
-    #     print(element, element.bounding_box())
-    # circuit.axis_transformation([100, 100])
+    circuit.save_png((1000, 1000), 'circuit.png')

@@ -21,6 +21,7 @@ background_color: Color = (255, 255, 255)  # white
 contact_radius: float = 50
 grounding_width: float = 100
 grounding_height: float = 60
+node_radius: float = 12
 line_width: int = 6
 
 
@@ -108,6 +109,18 @@ class Grounding(CircuitElement):
     def bounding_box(self) -> BoundBox:
         return (-grounding_width / 2 - line_width / 2, 0), \
                (+grounding_width / 2 - line_width / 2, grounding_height + line_width)
+
+
+@dataclass
+class Node(CircuitElement):
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransform = AxisTransform()) -> None:
+        cc: Tuple[RealCoord, RealCoord] = tr.xy(self.x, self.y)
+        image_draw.ellipse([(cc[0] - node_radius / 2, cc[1] - node_radius / 2),
+                            (cc[0] + node_radius / 2, cc[1] + node_radius / 2)],
+                           outline=line_color, fill=line_color, width=line_width)
+
+    def bounding_box(self) -> BoundBox:
+        return (-node_radius * 0.5, -node_radius * 0.5), (node_radius * 0.5, node_radius * 0.5)
 
 
 @dataclass
