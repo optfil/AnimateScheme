@@ -5,6 +5,7 @@ from typing import Tuple, List, Union, BinaryIO
 from dataclasses import dataclass, field
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
+import enum
 
 
 IntCoord = int
@@ -25,12 +26,29 @@ wire_width: int = 6
 
 
 @dataclass
+class AxisTransformation:
+    x_shift_: IntCoord = 0
+    y_shift_: IntCoord = 0
+    x_reversed_: bool = False
+    y_reversed_: bool = True
+
+    def x(self, x_old: IntCoord) -> IntCoord:
+        return x_old * int(1 - self.x_reversed_ * 2) + self.x_shift_
+
+    def y(self, y_old: IntCoord) -> IntCoord:
+        return y_old * int(1 - self.y_reversed_ * 2) + self.y_shift_
+
+    def xy(self, xy_old: Tuple[IntCoord, IntCoord]) -> Tuple[IntCoord, IntCoord]:
+        return self.x(xy_old[0]), self.y(xy_old[1])
+
+
+@dataclass
 class CircuitElement(ABC):
     x_: IntCoord
     y_: IntCoord
 
     @abstractmethod
-    def draw(self, image_draw: ImageDraw.Draw) -> None:
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         pass
 
     @abstractmethod
@@ -40,7 +58,7 @@ class CircuitElement(ABC):
 
 @dataclass
 class Contact(CircuitElement):
-    def draw(self, image_draw: ImageDraw.Draw) -> None:
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         image_draw.ellipse([(self.x_ - contact_diameter / 2, self.y_ - contact_diameter / 2),
                             (self.x_ + contact_diameter / 2, self.y_ + contact_diameter / 2)],
                            outline=line_color, fill=background_color, width=line_width)
@@ -70,7 +88,7 @@ class Grounding(CircuitElement):
                          (self.x_ + grounding_width / 6, self.y_ + grounding_height)],
                         fill=line_color, width=line_width)
 
-    def bounding_box(self) -> BoundBox:
+    def bounding_box(self, tr: AxisTransformation) -> BoundBox:
         return (math.floor(-grounding_width / 2), 0), \
                (math.ceil(grounding_width / 2), math.ceil(grounding_height + line_width / 2))
 
@@ -135,16 +153,18 @@ class Circuit:
         else:
             self.elements_.append(element)
 
-    def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str]) -> None:
+    def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str], tr: AxisTransformation = None) -> None:
         if not self.elements_:
             return
 
+        if not tr:
+            tr = AxisTransformation()
         image: Image = Image.new('RGB', image_size, background_color)
         image_draw: ImageDraw = ImageDraw.Draw(image)
         for wire in self.wires_:
-            wire.draw(image_draw)
+            wire.draw(image_draw, tr)
         for element in self.elements_:
-            element.draw(image_draw)
+            element.draw(image_draw, tr)
 
         file: BinaryIO = open(pf, 'wb') if isinstance(pf, str) else pf
         image.save(file, format='PNG')
