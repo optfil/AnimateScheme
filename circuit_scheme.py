@@ -5,7 +5,6 @@ from typing import Tuple, List, Union, BinaryIO
 from dataclasses import dataclass, field
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
-import enum
 
 
 IntCoord = int
@@ -23,6 +22,16 @@ resistance_length = 150
 resistance_width = 60
 line_width: int = 8
 wire_width: int = 6
+
+
+def unite_bbox(boxes: List[BoundBox]):
+    if not boxes:
+        return BoundBox((math.inf, math.inf), (-math.inf, -math.inf))
+    result: BoundBox = boxes[0]
+    for b in boxes[1:]:
+        result = (min(result[0][0], b[0][0]), min(result[0][1], b[0][1])), \
+                 (max(result[1][0], b[1][0]), max(result[1][1], b[1][1]))
+    return result
 
 
 @dataclass
@@ -52,21 +61,27 @@ class CircuitElement(ABC):
         pass
 
     @abstractmethod
-    def bounding_box(self) -> BoundBox:
+    def bounding_box_(self) -> BoundBox:
         pass
+
+    def bounding_box(self, tr: AxisTransformation = AxisTransformation()) -> BoundBox:
+        xy = tr.xy((self.x_, self.y_))
+        bbox: BoundBox = self.bounding_box_()
+        return (bbox[0][0] + xy[0], bbox[0][1] + xy[1]), (bbox[1][0] + xy[0], bbox[1][1] + xy[1])
 
 
 @dataclass
 class Contact(CircuitElement):
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
-        image_draw.ellipse([(self.x_ - contact_diameter / 2, self.y_ - contact_diameter / 2),
-                            (self.x_ + contact_diameter / 2, self.y_ + contact_diameter / 2)],
+        xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
+        image_draw.ellipse([(xy[0] - contact_diameter / 2, xy[1] - contact_diameter / 2),
+                            (xy[0] + contact_diameter / 2, xy[1] + contact_diameter / 2)],
                            outline=line_color, fill=background_color, width=line_width)
-        image_draw.line([(self.x_ - contact_diameter * 0.6, self.y_ + contact_diameter * 0.6),
-                         (self.x_ + contact_diameter * 0.6, self.y_ - contact_diameter * 0.6)],
+        image_draw.line([(xy[0] - contact_diameter * 0.6, xy[1] + contact_diameter * 0.6),
+                         (xy[0] + contact_diameter * 0.6, xy[1] - contact_diameter * 0.6)],
                         fill=line_color, width=line_width)
 
-    def bounding_box(self) -> BoundBox:
+    def bounding_box_(self) -> BoundBox:
         return (math.floor(-contact_diameter * 0.6 - line_width / 2 / math.sqrt(2)),
                 math.floor(-contact_diameter * 0.6 - line_width / 2 / math.sqrt(2))), \
                (math.ceil(contact_diameter * 0.6 + line_width / 2 / math.sqrt(2)),
@@ -75,32 +90,34 @@ class Contact(CircuitElement):
 
 @dataclass
 class Grounding(CircuitElement):
-    def draw(self, image_draw: ImageDraw.Draw) -> None:
-        image_draw.line([(self.x_, self.y_), (self.x_, self.y_ + grounding_height / 3)],
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
+        xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
+        image_draw.line([(xy[0], xy[1]), (xy[0], xy[1] + grounding_height / 3)],
                         fill=line_color, width=wire_width)
-        image_draw.line([(self.x_ - grounding_width / 2, self.y_ + grounding_height / 3),
-                         (self.x_ + grounding_width / 2, self.y_ + grounding_height / 3)],
+        image_draw.line([(xy[0] - grounding_width / 2, xy[1] + grounding_height / 3),
+                         (xy[0] + grounding_width / 2, xy[1] + grounding_height / 3)],
                         fill=line_color, width=line_width)
-        image_draw.line([(self.x_ - grounding_width / 3, self.y_ + grounding_height / 3 * 2),
-                         (self.x_ + grounding_width / 3, self.y_ + grounding_height / 3 * 2)],
+        image_draw.line([(xy[0] - grounding_width / 3, xy[1] + grounding_height / 3 * 2),
+                         (xy[0] + grounding_width / 3, xy[1] + grounding_height / 3 * 2)],
                         fill=line_color, width=line_width)
-        image_draw.line([(self.x_ - grounding_width / 6, self.y_ + grounding_height),
-                         (self.x_ + grounding_width / 6, self.y_ + grounding_height)],
+        image_draw.line([(xy[0] - grounding_width / 6, xy[1] + grounding_height),
+                         (xy[0] + grounding_width / 6, xy[1] + grounding_height)],
                         fill=line_color, width=line_width)
 
-    def bounding_box(self, tr: AxisTransformation) -> BoundBox:
+    def bounding_box_(self) -> BoundBox:
         return (math.floor(-grounding_width / 2), 0), \
                (math.ceil(grounding_width / 2), math.ceil(grounding_height + line_width / 2))
 
 
 @dataclass
 class Node(CircuitElement):
-    def draw(self, image_draw: ImageDraw.Draw) -> None:
-        image_draw.ellipse([(self.x_ - node_radius / 2, self.y_ - node_radius / 2),
-                            (self.x_ + node_radius / 2, self.y_ + node_radius / 2)],
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
+        xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
+        image_draw.ellipse([(xy[0] - node_radius / 2, xy[1] - node_radius / 2),
+                            (xy[0] + node_radius / 2, xy[1] + node_radius / 2)],
                            outline=line_color, fill=line_color, width=line_width)
 
-    def bounding_box(self) -> BoundBox:
+    def bounding_box_(self) -> BoundBox:
         return (math.floor(-node_radius * 0.5), math.floor(-node_radius * 0.5)), \
                (math.ceil(node_radius * 0.5), math.ceil(node_radius * 0.5))
 
@@ -109,22 +126,33 @@ class Node(CircuitElement):
 class Resistance(CircuitElement):
     angle_: float = 0.0
 
-    def draw(self, image_draw: ImageDraw.Draw) -> None:
-        def rotate(x: float, y: float, a: float) -> Tuple[float, float]:
-            return x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
+    @classmethod
+    def rotate_(cls, x: float, y: float, a: float) -> Tuple[float, float]:
+        return x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
 
-        x_min: float = self.x_ - resistance_length / 2
-        x_max: float = self.x_ + resistance_length / 2
-        y_min: float = self.y_ - resistance_width / 2
-        y_max: float = self.y_ + resistance_width / 2
-        image_draw.line([rotate(x_min, y_min, self.angle_), rotate(x_max, y_min, self.angle_),
-                         rotate(x_max, y_max, self.angle_), rotate(x_min, y_max, self.angle_),
-                         rotate(x_min, y_min, self.angle_), rotate(x_max, y_min, self.angle_)],
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
+        xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
+
+        x_min: float = xy[0] - resistance_length / 2
+        x_max: float = xy[0] + resistance_length / 2
+        y_min: float = xy[1] - resistance_width / 2
+        y_max: float = xy[1] + resistance_width / 2
+        image_draw.line([Resistance.rotate_(x_min, y_min, self.angle_), Resistance.rotate_(x_max, y_min, self.angle_),
+                         Resistance.rotate_(x_max, y_max, self.angle_), Resistance.rotate_(x_min, y_max, self.angle_),
+                         Resistance.rotate_(x_min, y_min, self.angle_), Resistance.rotate_(x_max, y_min, self.angle_)],
                         fill=line_color, width=line_width, joint='curve')
 
-    def bounding_box(self) -> BoundBox:
-        return (math.floor(-node_radius * 0.5), math.floor(-node_radius * 0.5)), \
-               (math.ceil(node_radius * 0.5), math.ceil(node_radius * 0.5))
+    def bounding_box_(self) -> BoundBox:
+        x1, y1 = Resistance.rotate_(+resistance_length / 2, +resistance_width / 2, self.angle_)
+        x2, y2 = Resistance.rotate_(-resistance_length / 2, +resistance_width / 2, self.angle_)
+        x3, y3 = Resistance.rotate_(-resistance_length / 2, -resistance_width / 2, self.angle_)
+        x4, y4 = Resistance.rotate_(+resistance_length / 2, -resistance_width / 2, self.angle_)
+        x_min = min(x1, x2, x3, x4)
+        x_max = max(x1, x2, x3, x4)
+        y_min = min(y1, y2, y3, y4)
+        y_max = max(y1, y2, y3, y4)
+
+        return (math.floor(x_min), math.floor(y_min)), (math.ceil(x_max), math.ceil(y_max))
 
 
 @dataclass
@@ -134,12 +162,20 @@ class Wire:
     def nodes(self) -> List[Tuple[IntCoord, IntCoord]]:
         return self.nodes_
 
-    def draw(self, image_draw: ImageDraw.Draw) -> None:
+    def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         if len(self.nodes_) < 2:
             return
 
-        image_draw.line(self.nodes_,
+        nodes: List[Tuple[IntCoord, IntCoord]] = [tr.xy(node) for node in self.nodes_]
+        image_draw.line(nodes,
                         fill=line_color, width=wire_width, joint='curve')
+
+    def bounding_box(self, tr: AxisTransformation = AxisTransformation()) -> BoundBox:
+        def node_bbox(node: Tuple[IntCoord, IntCoord], t: AxisTransformation):
+            xy = t.xy(node)
+            return (math.floor(xy[0] - wire_width / 2), math.floor(xy[1] - wire_width / 2)), \
+                   (math.ceil(xy[0] + wire_width / 2), math.ceil(xy[1] + wire_width / 2))
+        return unite_bbox([node_bbox(node, tr) for node in self.nodes_])
 
 
 @dataclass
@@ -153,12 +189,17 @@ class Circuit:
         else:
             self.elements_.append(element)
 
-    def save_png(self, image_size: Tuple[int, int], pf: Union[BinaryIO, str], tr: AxisTransformation = None) -> None:
+    def save_png(self, pf: Union[BinaryIO, str], tr: AxisTransformation = None) -> None:
         if not self.elements_:
             return
 
         if not tr:
-            tr = AxisTransformation()
+            global_bbox: BoundBox = unite_bbox([element.bounding_box() for element in self.elements_] +
+                                               [wire.bounding_box() for wire in self.wires_])
+            tr = AxisTransformation(-global_bbox[0][0], -global_bbox[0][1])
+        global_bbox: BoundBox = unite_bbox([element.bounding_box(tr) for element in self.elements_] +
+                                           [wire.bounding_box(tr) for wire in self.wires_])
+        image_size: Tuple[IntCoord, IntCoord] = (global_bbox[1][0], global_bbox[1][1])
         image: Image = Image.new('RGB', image_size, background_color)
         image_draw: ImageDraw = ImageDraw.Draw(image)
         for wire in self.wires_:

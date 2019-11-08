@@ -268,4 +268,4 @@ if __name__ == '__main__':
     circuit.add(w4)
     circuit.add(r1)
 
-    circuit.save_png((1500, 1500), 'circuit.png')
+    circuit.save_png('circuit.png')
