@@ -53,8 +53,34 @@ class AxisTransformation:
 
 @dataclass
 class CircuitElement(ABC):
+    class TerminalException(Exception):
+        def __init__(self, element: CircuitElement, n_requested: int):
+            self.element_ = element
+            self.n_requested_ = n_requested
+            super().__init__('Not enough terminals in {}: {} in total, requested {}'
+                             .format(element, element.terminal_number(), n_requested))
+
+        def __reduce__(self):
+            return CircuitElement.TerminalException, (self.element_, self.n_requested_)
+
     x_: IntCoord
     y_: IntCoord
+
+    def xy(self, tr: AxisTransformation = AxisTransformation()) -> Tuple[IntCoord, IntCoord]:
+        return tr.xy((self.x_, self.y_))
+
+    @abstractmethod
+    def terminal_number(self) -> int:
+        pass
+
+    def terminal_position(self, n: int, tr: AxisTransformation = AxisTransformation()) -> Tuple[IntCoord, IntCoord]:
+        if n >= self.terminal_number():
+            raise CircuitElement.TerminalException(self, n)
+        return tr.xy(self.terminal_position(n))
+
+    @abstractmethod
+    def terminal_position_(self, n: int) -> Tuple[IntCoord, IntCoord]:
+        pass
 
     @abstractmethod
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
@@ -71,7 +97,22 @@ class CircuitElement(ABC):
 
 
 @dataclass
+class Terminal:
+    element_: CircuitElement
+    number_: int
+
+    def xy(self, tr: AxisTransformation) -> Tuple[IntCoord, IntCoord]:
+        return tr.xy(self.element_.terminal_position(self.number_))
+
+
+@dataclass
 class Contact(CircuitElement):
+    def terminal_number(self) -> int:
+        return 1
+
+    def terminal_position_(self, n: int) -> Tuple[IntCoord, IntCoord]:
+        return 0, 0
+
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
         image_draw.ellipse([(xy[0] - contact_diameter / 2, xy[1] - contact_diameter / 2),
@@ -90,6 +131,12 @@ class Contact(CircuitElement):
 
 @dataclass
 class Grounding(CircuitElement):
+    def terminal_number(self) -> int:
+        return 1
+
+    def terminal_position_(self, n: int) -> Tuple[IntCoord, IntCoord]:
+        return 0, 0
+
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
         image_draw.line([(xy[0], xy[1]), (xy[0], xy[1] + grounding_height / 3)],
@@ -111,6 +158,12 @@ class Grounding(CircuitElement):
 
 @dataclass
 class Node(CircuitElement):
+    def terminal_number(self) -> int:
+        return 1
+
+    def terminal_position_(self, n: int) -> Tuple[IntCoord, IntCoord]:
+        return 0, 0
+
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
         image_draw.ellipse([(xy[0] - node_radius / 2, xy[1] - node_radius / 2),
@@ -129,6 +182,17 @@ class Resistance(CircuitElement):
     @classmethod
     def rotate_(cls, x: float, y: float, a: float) -> Tuple[float, float]:
         return x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
+
+    def terminal_number(self) -> int:
+        return 2
+
+    def terminal_position_(self, n: int) -> Tuple[IntCoord, IntCoord]:
+        if n == 0:
+            position: Tuple[float, float] = Resistance.rotate_(-resistance_length / 2, 0, self.angle_)
+            return math.floor(position[0]), math.ceil(position[1])
+        elif n == 1:
+            position: Tuple[float, float] = Resistance.rotate_(+resistance_length / 2, 0, self.angle_)
+            return math.floor(position[0]), math.ceil(position[1])
 
     def draw(self, image_draw: ImageDraw.Draw, tr: AxisTransformation) -> None:
         xy: Tuple[IntCoord, IntCoord] = tr.xy((self.x_, self.y_))
