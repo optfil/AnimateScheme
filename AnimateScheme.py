@@ -5,7 +5,7 @@ from svgwrite import *
 
 def demo():
     dwg = Drawing()
-    dwg.add(dwg.line((0, 0), (1, 1)))
+    square = dwg.add(dwg.rect((0, 0), (50, 20), fill='none', stroke='black', stroke_width=2))
     dwg.write(open('tmp.svg', 'w', encoding='utf-8'))
 
 
